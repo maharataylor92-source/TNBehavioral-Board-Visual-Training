@@ -1,0 +1,261 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Hardened Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validation Helpers
+    function isValidUserProfile(data, userId) {
+      return data.keys().hasAll(['userId', 'email'])
+        && data.keys().hasOnly(['userId', 'email', 'displayName', 'targetExamDate', 'createdAt', 'updatedAt'])
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.email is string
+        && data.email.size() > 0
+        && data.email.size() <= 150
+        && (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100))
+        && (!('targetExamDate' in data) || (data.targetExamDate is string && data.targetExamDate.size() <= 20));
+    }
+
+    function isValidExamAttempt(data, userId) {
+      return data.keys().hasAll(['userId', 'score', 'totalQuestions', 'percentage', 'passedBenchmark', 'mode'])
+        && data.keys().hasOnly(['userId', 'score', 'totalQuestions', 'percentage', 'passedBenchmark', 'mode', 'createdAt'])
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.score is number
+        && data.score >= 0
+        && data.score <= 100
+        && data.totalQuestions is number
+        && data.totalQuestions > 0
+        && data.totalQuestions <= 100
+        && data.percentage is number
+        && data.percentage >= 0
+        && data.percentage <= 100
+        && data.passedBenchmark is bool
+        && (data.mode in ['study', 'timed', 'adaptive']);
+    }
+
+    function isValidAdaptiveMistake(data, userId) {
+      return data.keys().hasAll(['userId', 'questionId', 'taskListCode', 'suggestedModuleId'])
+        && data.keys().hasOnly(['userId', 'questionId', 'taskListCode', 'category', 'selectedAnswerIndex', 'correctAnswerIndex', 'suggestedModuleId', 'suggestedModuleTitle', 'mistakeCount', 'resolved', 'lastAttemptAt', 'createdAt'])
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.questionId is string
+        && data.questionId.size() > 0
+        && data.questionId.size() <= 50
+        && data.taskListCode is string
+        && data.taskListCode.size() > 0
+        && data.taskListCode.size() <= 20
+        && data.suggestedModuleId is string
+        && data.suggestedModuleId.size() > 0
+        && data.suggestedModuleId.size() <= 80
+        && (!('category' in data) || (data.category is string && data.category.size() <= 100))
+        && (!('selectedAnswerIndex' in data) || (data.selectedAnswerIndex is number && data.selectedAnswerIndex >= 0 && data.selectedAnswerIndex <= 10))
+        && (!('correctAnswerIndex' in data) || (data.correctAnswerIndex is number && data.correctAnswerIndex >= 0 && data.correctAnswerIndex <= 10))
+        && (!('suggestedModuleTitle' in data) || (data.suggestedModuleTitle is string && data.suggestedModuleTitle.size() <= 150))
+        && (!('mistakeCount' in data) || (data.mistakeCount is number && data.mistakeCount >= 0 && data.mistakeCount <= 1000))
+        && (!('resolved' in data) || data.resolved is bool);
+    }
+
+    function isValidIntervalSession(data, userId) {
+      return data.keys().hasAll(['userId', 'scenarioName', 'truePercent', 'pirPercent', 'wirPercent', 'mtsPercent'])
+        && data.keys().hasOnly(['userId', 'scenarioName', 'truePercent', 'pirPercent', 'wirPercent', 'mtsPercent', 'biasRecognized', 'createdAt'])
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.scenarioName is string
+        && data.scenarioName.size() > 0
+        && data.scenarioName.size() <= 100
+        && data.truePercent is number
+        && data.pirPercent is number
+        && data.wirPercent is number
+        && data.mtsPercent is number
+        && (!('biasRecognized' in data) || data.biasRecognized is bool);
+    }
+
+    function isValidStudySession(data, userId) {
+      return data.keys().hasAll(['userId', 'durationMinutes', 'topic'])
+        && data.keys().hasOnly(['userId', 'durationMinutes', 'studyArea', 'topic', 'notes', 'completed', 'createdAt'])
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.durationMinutes is number
+        && data.durationMinutes > 0
+        && data.durationMinutes <= 600
+        && data.topic is string
+        && data.topic.size() > 0
+        && data.topic.size() <= 100
+        && (!('studyArea' in data) || (data.studyArea is string && data.studyArea.size() <= 60))
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 300))
+        && (!('completed' in data) || data.completed is bool);
+    }
+
+    function isValidDataSheet(data, userId) {
+      return data.keys().hasAll(['userId', 'studentName', 'targetBehavior', 'measurementType'])
+        && data.keys().hasOnly(['userId', 'studentName', 'observerName', 'targetBehavior', 'measurementType', 'setting', 'createdAt', 'updatedAt'])
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.studentName is string
+        && data.studentName.size() > 0
+        && data.studentName.size() <= 100
+        && data.targetBehavior is string
+        && data.targetBehavior.size() > 0
+        && data.targetBehavior.size() <= 200
+        && data.measurementType in ['Duration', 'Latency', 'Frequency', 'Whole Interval', 'Partial Interval', 'Momentary Time Sampling']
+        && (!('observerName' in data) || (data.observerName is string && data.observerName.size() <= 100))
+        && (!('setting' in data) || (data.setting is string && data.setting.size() <= 150));
+    }
+
+    function isValidGraphRecord(data, userId) {
+      return data.keys().hasAll(['userId', 'title', 'studentCaseId'])
+        && data.keys().hasOnly(['userId', 'title', 'studentCaseId', 'aimLineGoal', 'notes', 'createdAt', 'updatedAt'])
+        && data.userId == userId
+        && data.userId == request.auth.uid
+        && data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 150
+        && data.studentCaseId is string
+        && data.studentCaseId.size() > 0
+        && data.studentCaseId.size() <= 100
+        && (!('aimLineGoal' in data) || data.aimLineGoal is number)
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 500));
+    }
+
+    // User Profile Rules
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow list: if false; // Blanket enumeration of candidate profiles is strictly forbidden
+
+      allow create: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId);
+
+      allow update: if isOwner(userId)
+        && isValidId(userId)
+        && isValidUserProfile(incoming(), userId)
+        && incoming().userId == existing().userId;
+
+      allow delete: if isOwner(userId) && isValidId(userId);
+
+      // Exam Attempts Subcollection
+      match /examAttempts/{attemptId} {
+        allow get: if isOwner(userId) && isValidId(attemptId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && isValidId(attemptId)
+          && isValidExamAttempt(incoming(), userId);
+
+        allow update: if false; // Exam attempts are immutable historical records
+
+        allow delete: if isOwner(userId) && isValidId(attemptId);
+      }
+
+      // Adaptive Mistakes Subcollection (Tracked Incorrect Answers for Study Recommendations)
+      match /adaptiveMistakes/{mistakeId} {
+        allow get: if isOwner(userId) && isValidId(mistakeId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && isValidId(mistakeId)
+          && isValidAdaptiveMistake(incoming(), userId);
+
+        allow update: if isOwner(userId)
+          && isValidId(mistakeId)
+          && isValidAdaptiveMistake(incoming(), userId)
+          && incoming().userId == existing().userId;
+
+        allow delete: if isOwner(userId) && isValidId(mistakeId);
+      }
+
+      // Interval Sessions Subcollection (Interval Lab Performance Metrics)
+      match /intervalSessions/{sessionId} {
+        allow get: if isOwner(userId) && isValidId(sessionId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && isValidId(sessionId)
+          && isValidIntervalSession(incoming(), userId);
+
+        allow update: if false; // Simulation metrics are immutable historical records
+
+        allow delete: if isOwner(userId) && isValidId(sessionId);
+      }
+
+      // Study Sessions Subcollection (Study Timer Logs)
+      match /studySessions/{studyId} {
+        allow get: if isOwner(userId) && isValidId(studyId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && isValidId(studyId)
+          && isValidStudySession(incoming(), userId);
+
+        allow update: if false; // Study logs are immutable historical records
+
+        allow delete: if isOwner(userId) && isValidId(studyId);
+      }
+
+      // Saved Data Sheets Subcollection
+      match /dataSheets/{sheetId} {
+        allow get: if isOwner(userId) && isValidId(sheetId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && isValidId(sheetId)
+          && isValidDataSheet(incoming(), userId);
+
+        allow update: if isOwner(userId)
+          && isValidId(sheetId)
+          && isValidDataSheet(incoming(), userId)
+          && incoming().userId == existing().userId;
+
+        allow delete: if isOwner(userId) && isValidId(sheetId);
+      }
+
+      // Graphs Subcollection
+      match /graphs/{graphId} {
+        allow get: if isOwner(userId) && isValidId(graphId);
+        allow list: if isOwner(userId);
+
+        allow create: if isOwner(userId)
+          && isValidId(graphId)
+          && isValidGraphRecord(incoming(), userId);
+
+        allow update: if isOwner(userId)
+          && isValidId(graphId)
+          && isValidGraphRecord(incoming(), userId)
+          && incoming().userId == existing().userId;
+
+        allow delete: if isOwner(userId) && isValidId(graphId);
+      }
+    }
+
+    // Health check for initial SDK connection
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}

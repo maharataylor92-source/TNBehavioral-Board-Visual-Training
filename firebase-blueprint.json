@@ -1,0 +1,356 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "UserProfile",
+      "description": "User profile and examination study settings for RBT candidates.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Email address of the candidate."
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Display name of the candidate."
+        },
+        "targetExamDate": {
+          "type": "string",
+          "maxLength": 20,
+          "description": "Target date for the Tennessee RBT exam."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the profile was initialized."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the profile was last modified."
+        }
+      },
+      "required": ["userId", "email"]
+    },
+    "examAttempt": {
+      "title": "ExamAttempt",
+      "description": "Record of a completed or in-progress RBT Practice Exam attempt.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User UID who took the exam."
+        },
+        "score": {
+          "type": "number",
+          "description": "Number of correctly answered questions."
+        },
+        "totalQuestions": {
+          "type": "number",
+          "description": "Total questions attempted."
+        },
+        "percentage": {
+          "type": "number",
+          "description": "Score percentage."
+        },
+        "passedBenchmark": {
+          "type": "boolean",
+          "description": "True if score is >= 80% passing benchmark."
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["study", "timed", "adaptive"],
+          "description": "Whether taken in instant feedback, timed exam, or adaptive quiz mode."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of the attempt."
+        }
+      },
+      "required": ["userId", "score", "totalQuestions", "percentage", "passedBenchmark", "mode"]
+    },
+    "intervalSession": {
+      "title": "IntervalSession",
+      "description": "Interval measurement simulation trial results tracking discontinuous measurement bias.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User UID who performed the simulation."
+        },
+        "scenarioName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Name of student behavioral scenario (e.g. Maya, Liam)."
+        },
+        "truePercent": {
+          "type": "number",
+          "description": "Ground truth continuous on-task percentage."
+        },
+        "pirPercent": {
+          "type": "number",
+          "description": "Partial Interval Recording percentage."
+        },
+        "wirPercent": {
+          "type": "number",
+          "description": "Whole Interval Recording percentage."
+        },
+        "mtsPercent": {
+          "type": "number",
+          "description": "Momentary Time Sampling percentage."
+        },
+        "biasRecognized": {
+          "type": "boolean",
+          "description": "Whether candidate recognized PIR overestimation and WIR underestimation."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of simulation."
+        }
+      },
+      "required": ["userId", "scenarioName", "truePercent", "pirPercent", "wirPercent", "mtsPercent"]
+    },
+    "studySession": {
+      "title": "StudySession",
+      "description": "Focused study timer logs for candidate consistency tracking.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User UID who logged the study session."
+        },
+        "durationMinutes": {
+          "type": "number",
+          "description": "Elapsed focused study time in minutes."
+        },
+        "studyArea": {
+          "type": "string",
+          "maxLength": 60,
+          "description": "Primary RBT Task List study area (e.g. Measurement, Assessment, Skill Acquisition, Behavior Reduction, Documentation & Reporting, Ethics)."
+        },
+        "topic": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Specific study domain or task list area."
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 300,
+          "description": "Optional notes or reflections."
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Whether session reached planned timer duration."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Session completion timestamp."
+        }
+      },
+      "required": ["userId", "durationMinutes", "topic"]
+    },
+    "dataSheet": {
+      "title": "DataSheet",
+      "description": "Customized clinical data collection sheet created by the RBT.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User UID who created the sheet."
+        },
+        "studentName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Initials or pseudonym of the student."
+        },
+        "observerName": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Name of the observing RBT."
+        },
+        "targetBehavior": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Operationally defined target behavior."
+        },
+        "measurementType": {
+          "type": "string",
+          "enum": ["Duration", "Latency", "Frequency", "Whole Interval", "Partial Interval", "Momentary Time Sampling"],
+          "description": "Measurement dimension used."
+        },
+        "setting": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "Observation context or classroom environment."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when sheet was created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when sheet was updated."
+        }
+      },
+      "required": ["userId", "studentName", "targetBehavior", "measurementType"]
+    },
+    "graphRecord": {
+      "title": "GraphRecord",
+      "description": "User customized progress monitoring graph sandbox configuration.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User UID who saved the graph."
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "Title of the graph."
+        },
+        "studentCaseId": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Associated student case id."
+        },
+        "aimLineGoal": {
+          "type": "number",
+          "description": "Target aim line endpoint value."
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Clinical interpretation notes."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Creation timestamp."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Update timestamp."
+        }
+      },
+      "required": ["userId", "title", "studentCaseId"]
+    },
+    "adaptiveMistake": {
+      "title": "AdaptiveMistake",
+      "description": "Tracked incorrect answer for adaptive quiz review and study guide recommendations.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user."
+        },
+        "questionId": {
+          "type": "string",
+          "maxLength": 50,
+          "description": "ID of the missed exam question."
+        },
+        "taskListCode": {
+          "type": "string",
+          "maxLength": 20,
+          "description": "BACB Task List item code (e.g. A-1, A-2, A-3)."
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "Question category or domain."
+        },
+        "selectedAnswerIndex": {
+          "type": "number",
+          "description": "Index of option selected by user."
+        },
+        "correctAnswerIndex": {
+          "type": "number",
+          "description": "Index of correct option."
+        },
+        "suggestedModuleId": {
+          "type": "string",
+          "maxLength": 80,
+          "description": "ID of study guide module to review."
+        },
+        "suggestedModuleTitle": {
+          "type": "string",
+          "maxLength": 150,
+          "description": "Title of recommended study module."
+        },
+        "mistakeCount": {
+          "type": "number",
+          "description": "Cumulative times this question was answered incorrectly."
+        },
+        "resolved": {
+          "type": "boolean",
+          "description": "Whether question was answered correctly in subsequent retry."
+        },
+        "lastAttemptAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of most recent attempt."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Initial record creation timestamp."
+        }
+      },
+      "required": ["userId", "questionId", "taskListCode", "suggestedModuleId"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/userProfile"
+      },
+      "description": "Private user profile and exam study settings."
+    },
+    "/users/{userId}/examAttempts/{attemptId}": {
+      "schema": {
+        "$ref": "#/entities/examAttempt"
+      },
+      "description": "Practice exam attempts and diagnostic scores for candidate progress monitoring."
+    },
+    "/users/{userId}/adaptiveMistakes/{mistakeId}": {
+      "schema": {
+        "$ref": "#/entities/adaptiveMistake"
+      },
+      "description": "Historical incorrect answers tracked for adaptive quiz recommendation engine."
+    },
+    "/users/{userId}/intervalSessions/{sessionId}": {
+      "schema": {
+        "$ref": "#/entities/intervalSession"
+      },
+      "description": "Interval lab performance metrics tracking discontinuous measurement bias mastery."
+    },
+    "/users/{userId}/studySessions/{studyId}": {
+      "schema": {
+        "$ref": "#/entities/studySession"
+      },
+      "description": "Focused study timer logs tracking candidate preparation hours."
+    },
+    "/users/{userId}/dataSheets/{sheetId}": {
+      "schema": {
+        "$ref": "#/entities/dataSheet"
+      },
+      "description": "Customized clinical data sheets saved by the candidate."
+    },
+    "/users/{userId}/graphs/{graphId}": {
+      "schema": {
+        "$ref": "#/entities/graphRecord"
+      },
+      "description": "Custom single-case graph designs and progress monitoring analyses."
+    }
+  }
+}
